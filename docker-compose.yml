@@ -1,0 +1,81 @@
+version: '3'
+services:
+  strapi:
+    container_name: strapi
+    build: .
+    image: mystrapi:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_CLIENT: ${DATABASE_CLIENT}
+      DATABASE_HOST: strapiDB
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PORT: ${DATABASE_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    volumes:
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+      - ./package.json:/opt/package.json
+      - ./yarn.lock:/opt/yarn.lock
+      - ./.env:/opt/app/.env
+      - ./public/uploads:/opt/app/public/uploads
+    ports:
+      - '1337:1337'
+    networks:
+      - strapi
+    depends_on:
+      - strapiDB
+
+  strapiDB:
+    image: postgres:12.0-alpine
+    container_name: strapiDB
+    platform: linux/amd64 #for platform error on Apple M1 chips
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - strapi-data:/var/lib/postgresql/data/ #using a volume
+      #- ./data:/var/lib/postgresql/data/ # if you want to use a bind folder
+    ports:
+      - '5432:5432'
+    networks:
+      - strapi
+
+volumes:
+  strapi-data:
+
+networks:
+  strapi:
+    name: Strapi
+    driver: bridge
+
+caproverOneClickApp:
+    variables:
+        - id: '$$cap_myapp_version'
+          label: Awesome App Version
+          defaultValue: '1.2.3'
+          description: Check out their Docker page for the valid tags https://hub.docker.com/r/....../tags
+          validRegex: "/.{1,}/"
+    instructions:
+        start: |-
+            A description that will be displayed to the user when they
+            are installing one click app!
+            It can be multiline and contain more details and probably special
+            hardware requirements!
+        end: |-
+            A summary when the app is deployed!
+            It can be multiline.
+
+            It can also include the dynamic parameters such as
+            $$cap_appname and $$cap_other_random_char
+    displayName: The Awesome App
+    isOfficial: true ## Only if all images used here are official or from a trusted source.
+    description: A relatively short description, less than 200 characters.
+    documentation: This docker-compose is taken from example.com
